@@ -19,7 +19,8 @@ RUN apt-get update \
   && rm -rf /var/lib/apt/lists/*
 
 # Generate locales to allow other languages in the PZ Server
-RUN sed -i 's/^# *\(es_ES.UTF-8\)/\1/' /etc/locale.gen \
+# RUN sed -i 's/^# *\(es_ES.UTF-8\)/\1/' /etc/locale.gen \
+RUN sed -i 's/^# *\(ja_JP.UTF-8\)/\1/' /etc/locale.gen \
   # Generate locale
   && locale-gen
 

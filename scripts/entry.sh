@@ -8,6 +8,12 @@ cd ${STEAMAPPDIR}
 #                                   #
 #####################################
 
+if [ "${FORCESTEAMCLIENTSOUPDATE}" == "1" ]; then
+  echo "FORCESTEAMCLIENTSOUPDATE variable is set, updating steamclient.so in Zomboid's server"
+  cp "${STEAMCMDDIR}/linux64/steamclient.so" "${STEAMAPPDIR}/linux64/steamclient.so"
+  cp "${STEAMCMDDIR}/linux32/steamclient.so" "${STEAMAPPDIR}/steamclient.so"
+fi
+
 if [ "${FORCEUPDATE}" == "1" ]; then
   echo "FORCEUPDATE variable is set, so the server will be updated right now"
   bash "${STEAMCMDDIR}/steamcmd.sh" +force_install_dir "${STEAMAPPDIR}" +login anonymous +app_update "${STEAMAPPID}" validate +quit
@@ -159,7 +165,7 @@ sed -i 's/\r$//' /server/scripts/search_folder.sh
 if [ -e "${HOMEDIR}/pz-dedicated/steamapps/workshop/content/108600" ]; then
 
   map_list=""
-  source /server/scripts/search_folder.sh "${HOMEDIR}/pz-dedicated/steamapps/workshop/content/108600"
+  source /server/scripts/search_folder.sh "${HOMEDIR}/pz-dedicated/steamapps/workshop/content/108600" "${MAP_IDS}"
   map_list=$(<"${HOMEDIR}/maps.txt")  
   rm "${HOMEDIR}/maps.txt"
 
@@ -193,4 +199,20 @@ chown -R 1000:1000 /home/steam/pz-dedicated/steamapps/workshop /home/steam/Zombo
 # Fix it the adding back `rwx` permissions for the file owner (steam user)
 chmod 755 /home/steam/Zomboid
 
-su - steam -c "export LANG=${LANG} && export LD_LIBRARY_PATH=\"${STEAMAPPDIR}/jre64/lib:${LD_LIBRARY_PATH}\" && cd ${STEAMAPPDIR} && pwd && ./start-server.sh ${ARGS}"
+# Mikage Modify Begin
+# su - steam -c "export LANG=${LANG} && export LD_LIBRARY_PATH=\"${STEAMAPPDIR}/jre64/lib:${LD_LIBRARY_PATH}\" && cd ${STEAMAPPDIR} && pwd && ./start-server.sh ${ARGS}"
+# https://qiita.com/mihyon/items/2a6d96b26ac12ee66d4e
+# https://theindiestone.com/forums/index.php?/topic/63563-4178-multiplayer-zomboid-dedicated-server-does-not-handle-sigterm/
+handler() {
+  echo Sending quit command...
+  echo quit > "${STEAMAPPDIR}/zomboid.control"
+  wait ${child_pid}
+  echo Shutdown in handler.
+}
+trap handler SIGTERM
+su - steam -c "mkfifo ${STEAMAPPDIR}/zomboid.control"
+su - steam -c "export LANG=${LANG} && export LD_LIBRARY_PATH=\"${STEAMAPPDIR}/jre64/lib:${LD_LIBRARY_PATH}\" && cd ${STEAMAPPDIR} && pwd && ./start-server.sh ${ARGS} 0<> ./zomboid.control" &
+child_pid=$!
+wait ${child_pid}
+echo Shutdown.
+# Mikage Modify End

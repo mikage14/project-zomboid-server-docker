@@ -3,6 +3,7 @@
 # Function to recursively search for a folder name
 search_folder() {
     local search_dir="$1"
+    local map_ids="$2"
     counter=1
 
     for item in "$search_dir"/*; do
@@ -22,6 +23,20 @@ search_folder() {
 
                         for source_dir in "${source_dirs[@]}"; do
                             dir_name=$(basename "$source_dir")
+
+                            # Mikage Added
+                            target_map=0
+                            IFS=";" read -ra map_ids_array <<< "$map_ids"
+                            for map_id in "${map_ids_array[@]}"; do
+                                if [ "$dir_name" == "$map_id" ]; then
+                                    target_map=1
+                                    break
+                                fi
+                            done
+                            if [ $target_map -ne 1 ]; then
+                                continue
+                            fi
+
                             if [ ! -d "$map_dir/$dir_name" ]; then
                                 echo "Found map(s). Copying..."
                                 cp -r "$mod_folder/media/maps"/* "${HOMEDIR}/pz-dedicated/media/maps"
@@ -34,6 +49,20 @@ search_folder() {
                         for dir in "$mod_folder/media/maps"/*/; do
                             if [ -d "$dir" ]; then
                                 dir_name=$(basename "$dir")
+
+                                # Mikage Added
+                                target_map=0
+                                IFS=";" read -ra map_ids_array <<< "$map_ids"
+                                for map_id in "${map_ids_array[@]}"; do
+                                    if [ "$dir_name" == "$map_id" ]; then
+                                        target_map=1
+                                        break
+                                    fi
+                                done
+                                if [ $target_map -ne 1 ]; then
+                                    continue
+                                fi
+
                                 map_list+="$dir_name;"     
                             fi
                         done
@@ -54,4 +83,4 @@ if [ ! -d "$parent_folder" ]; then
 fi
 
 # Call the search_folder function with the provided arguments
-search_folder "$parent_folder"
+search_folder "$parent_folder" "$2"
