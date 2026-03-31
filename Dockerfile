@@ -15,6 +15,8 @@ ENV HOME="${HOMEDIR}"
 RUN apt-get update \
   && apt-get install -y --no-install-recommends --no-install-suggests \
   dos2unix \
+  ca-certificates \
+  curl \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
 
@@ -41,6 +43,10 @@ RUN chmod 550 /server/scripts/entry.sh
 # Copy searchfolder file
 COPY --chown=${USER}:${USER} scripts/search_folder.sh /server/scripts/search_folder.sh
 RUN chmod 550 /server/scripts/search_folder.sh
+
+# Copy apply_no_mo_culling.sh file
+COPY --chown=${USER}:${USER} scripts/apply_no_mo_culling.sh /server/scripts/apply_no_mo_culling.sh
+RUN chmod 550 /server/scripts/apply_no_mo_culling.sh
 
 # Create required folders to keep their permissions on mount
 RUN mkdir -p "${HOMEDIR}/Zomboid"

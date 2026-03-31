@@ -19,6 +19,8 @@ if [ "${FORCEUPDATE}" == "1" ]; then
   bash "${STEAMCMDDIR}/steamcmd.sh" +force_install_dir "${STEAMAPPDIR}" +login anonymous +app_update "${STEAMAPPID}" validate +quit
 fi
 
+# Apply No Mo Culling
+bash /server/scripts/apply_no_mo_culling.sh
 
 ######################################
 #                                    #
