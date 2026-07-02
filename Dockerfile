@@ -31,10 +31,14 @@ RUN sed -i 's/^# *\(ja_JP.UTF-8\)/\1/' /etc/locale.gen \
 RUN set -x \
   && mkdir -p "${STEAMAPPDIR}" \
   && chown -R "${USER}:${USER}" "${STEAMAPPDIR}" \
-  && bash "${STEAMCMDDIR}/steamcmd.sh" +force_install_dir "${STEAMAPPDIR}" \
-  +login anonymous \
-  +app_update "${STEAMAPPID}" validate \
-  +quit
+  && for attempt in 1 2 3 4 5; do \
+    bash "${STEAMCMDDIR}/steamcmd.sh" +force_install_dir "${STEAMAPPDIR}" \
+    +login anonymous \
+    +app_update "${STEAMAPPID}" validate \
+    +quit && break; \
+    if [ "$attempt" = "5" ]; then exit 1; fi; \
+    sleep 10; \
+  done
 
 # Copy the entry point file
 COPY --chown=${USER}:${USER} scripts/entry.sh /server/scripts/entry.sh
