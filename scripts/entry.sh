@@ -39,6 +39,9 @@ if [ "${SOFTRESET}" == "1" ] || [ "${SOFTRESET,,}" == "true" ]; then
   ARGS="${ARGS} -Dsoftreset"
 fi
 
+# Project Zomboid uses JP, rather than Java's ja, as its Japanese language ID.
+ARGS="${ARGS} -Duser.language=JP"
+
 # End of Java arguments
 ARGS="${ARGS} -- "
 
