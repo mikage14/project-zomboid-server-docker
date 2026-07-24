@@ -1,7 +1,6 @@
 version: "3.7"
 services:
-  ProjectZomboidDedicatedServer:
-    image: danixu86/project-zomboid-dedicated-server:latest
+  pzserver:
     restart: unless-stopped
     stop_grace_period: 15s
     build:

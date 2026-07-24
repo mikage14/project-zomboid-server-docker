@@ -34,7 +34,7 @@ RUN set -x \
   && for attempt in 1 2 3 4 5; do \
     bash "${STEAMCMDDIR}/steamcmd.sh" +force_install_dir "${STEAMAPPDIR}" \
     +login anonymous \
-    +app_update "${STEAMAPPID}" validate \
+    +app_update "${STEAMAPPID}" -beta legacy41 validate \
     +quit && break; \
     if [ "$attempt" = "5" ]; then exit 1; fi; \
     sleep 10; \
