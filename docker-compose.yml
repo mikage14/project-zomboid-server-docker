@@ -6,8 +6,12 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        STEAM_BETA: ${STEAM_BETA-legacy41}
     env_file:
       - .env
+    environment:
+      STEAM_BETA: ${STEAM_BETA-legacy41}
     ports:
       - "16261:16261/udp"
       - "16262:16262/udp"

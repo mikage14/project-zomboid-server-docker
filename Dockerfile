@@ -3,6 +3,8 @@
 ###########################################################
 FROM cm2network/steamcmd:root
 
+ARG STEAM_BETA=legacy41
+
 LABEL maintainer="daniel.carrasco@electrosoftcloud.com"
 
 ENV STEAMAPPID=380870
@@ -29,12 +31,13 @@ RUN sed -i 's/^# *\(ja_JP.UTF-8\)/\1/' /etc/locale.gen \
 # Download the Project Zomboid dedicated server app using the steamcmd app
 # Set the entry point file permissions
 RUN set -x \
+  && if [ -n "${STEAM_BETA}" ]; then set -- -beta "${STEAM_BETA}"; else set --; fi \
   && mkdir -p "${STEAMAPPDIR}" \
   && chown -R "${USER}:${USER}" "${STEAMAPPDIR}" \
   && for attempt in 1 2 3 4 5; do \
     bash "${STEAMCMDDIR}/steamcmd.sh" +force_install_dir "${STEAMAPPDIR}" \
     +login anonymous \
-    +app_update "${STEAMAPPID}" -beta legacy41 validate \
+    +app_update "${STEAMAPPID}" "$@" validate \
     +quit && break; \
     if [ "$attempt" = "5" ]; then exit 1; fi; \
     sleep 10; \

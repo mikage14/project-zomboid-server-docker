@@ -8,6 +8,11 @@ cd ${STEAMAPPDIR}
 #                                   #
 #####################################
 
+steam_beta_args=()
+if [ -n "${STEAM_BETA:-}" ]; then
+  steam_beta_args=(-beta "${STEAM_BETA}")
+fi
+
 if [ "${FORCESTEAMCLIENTSOUPDATE}" == "1" ]; then
   echo "FORCESTEAMCLIENTSOUPDATE variable is set, updating steamclient.so in Zomboid's server"
   cp "${STEAMCMDDIR}/linux64/steamclient.so" "${STEAMAPPDIR}/linux64/steamclient.so"
@@ -16,7 +21,7 @@ fi
 
 if [ "${FORCEUPDATE}" == "1" ]; then
   echo "FORCEUPDATE variable is set, so the server will be updated right now"
-  bash "${STEAMCMDDIR}/steamcmd.sh" +force_install_dir "${STEAMAPPDIR}" +login anonymous +app_update "${STEAMAPPID}" -beta legacy41 validate +quit
+  bash "${STEAMCMDDIR}/steamcmd.sh" +force_install_dir "${STEAMAPPDIR}" +login anonymous +app_update "${STEAMAPPID}" "${steam_beta_args[@]}" validate +quit
 fi
 
 # Apply No Mo Culling
