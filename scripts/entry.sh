@@ -24,8 +24,13 @@ if [ "${FORCEUPDATE}" == "1" ]; then
   bash "${STEAMCMDDIR}/steamcmd.sh" +force_install_dir "${STEAMAPPDIR}" +login anonymous +app_update "${STEAMAPPID}" "${steam_beta_args[@]}" validate +quit
 fi
 
-# Apply No Mo Culling
-bash /server/scripts/apply_no_mo_culling.sh
+# The published No Mo Culling classes target Build 41 and are binary-incompatible
+# with Build 42. Only replace the game classes on the legacy41 branch.
+if [ "${STEAM_BETA:-}" == "legacy41" ]; then
+  bash /server/scripts/apply_no_mo_culling.sh
+else
+  echo "*** INFO: Skipping No Mo Culling patch (only supported on legacy41) ***"
+fi
 
 ######################################
 #                                    #
