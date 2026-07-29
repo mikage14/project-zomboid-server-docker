@@ -154,19 +154,65 @@ if [ -n "${STEAMPORT2}" ]; then
   ARGS="${ARGS} -steamport2 ${STEAMPORT1}"
 fi
 
+#############################################
+#                                           #
+# Server INI file settings                  #
+#                                           #
+#############################################
+
+# The server only creates its INI file on the first boot, so on a fresh server the
+# settings below used to be written to a file that did not exist yet, and they only
+# took effect after a restart. Creating an empty INI up front avoids that: the server
+# loads it, keeps whatever is set here and fills in the rest with default values.
+SERVERINI="${HOMEDIR}/Zomboid/Server/${SERVERNAME}.ini"
+if [ ! -f "${SERVERINI}" ]; then
+  mkdir -p "${HOMEDIR}/Zomboid/Server/"
+  touch "${SERVERINI}"
+fi
+
+# Set a single option in the server INI file, appending it when the key is missing.
+# This deliberately avoids sed: Build 42 mod ids are paths such as "\StarlitLibrary",
+# and a backslash in a sed replacement is an escape character, so the ids were mangled
+# ("\t" turned into a tab, "\42" made sed abort and leave Mods= untouched). Neither
+# bash pattern matching nor printf '%s' interpret the value, so it passes through
+# exactly as written in .env.
+set_ini_option() {
+  local key="$1" value="$2" tmp="${SERVERINI}.new" line found=0
+
+  : > "${tmp}"
+  while IFS= read -r line || [ -n "${line}" ]; do
+    case "${line}" in
+      "${key}="*)
+        if [ "${found}" -eq 0 ]; then
+          printf '%s=%s\n' "${key}" "${value}" >> "${tmp}"
+          found=1
+        fi
+        ;;
+      *)
+        printf '%s\n' "${line}" >> "${tmp}"
+        ;;
+    esac
+  done < "${SERVERINI}"
+
+  if [ "${found}" -eq 0 ]; then
+    printf '%s=%s\n' "${key}" "${value}" >> "${tmp}"
+  fi
+
+  mv "${tmp}" "${SERVERINI}"
+}
+
 if [ -n "${PASSWORD}" ]; then
-	sed -i "s/Password=.*/Password=${PASSWORD}/" "${HOMEDIR}/Zomboid/Server/${SERVERNAME}.ini"
+  set_ini_option "Password" "${PASSWORD}"
 fi
 
 if [ -n "${MOD_IDS}" ]; then
- 	echo "*** INFO: Found Mods including ${MOD_IDS} ***"
-	sed -i "s/Mods=.*/Mods=${MOD_IDS}/" "${HOMEDIR}/Zomboid/Server/${SERVERNAME}.ini"
+  echo "*** INFO: Found Mods including ${MOD_IDS} ***"
+  set_ini_option "Mods" "${MOD_IDS}"
 fi
 
 if [ -n "${WORKSHOP_IDS}" ]; then
- 	echo "*** INFO: Found Workshop IDs including ${WORKSHOP_IDS} ***"
-	sed -i "s/WorkshopItems=.*/WorkshopItems=${WORKSHOP_IDS}/" "${HOMEDIR}/Zomboid/Server/${SERVERNAME}.ini"
-	
+  echo "*** INFO: Found Workshop IDs including ${WORKSHOP_IDS} ***"
+  set_ini_option "WorkshopItems" "${WORKSHOP_IDS}"
 fi
 
 # Fixes EOL in script file for good measure
@@ -181,12 +227,12 @@ if [ -e "${HOMEDIR}/pz-dedicated/steamapps/workshop/content/108600" ]; then
 
   if [ -n "${map_list}" ]; then
     echo "*** INFO: Added maps including ${map_list} ***"
-    sed -i "s/Map=.*/Map=${map_list}Muldraugh, KY/" "${HOMEDIR}/Zomboid/Server/${SERVERNAME}.ini"
+    set_ini_option "Map" "${map_list}Muldraugh, KY"
 
     # Checks which added maps have spawnpoints.lua files and adds them to the spawnregions file if they aren't already added
     IFS=";" read -ra strings <<< "$map_list"
     for string in "${strings[@]}"; do
-        if ! grep -q "$string" "${HOMEDIR}/Zomboid/Server/${SERVERNAME}_spawnregions.lua"; then
+        if [ -f "${HOMEDIR}/Zomboid/Server/${SERVERNAME}_spawnregions.lua" ] && ! grep -q "$string" "${HOMEDIR}/Zomboid/Server/${SERVERNAME}_spawnregions.lua"; then
           if [ -e "${HOMEDIR}/pz-dedicated/media/maps/$string/spawnpoints.lua" ]; then
             result="{ name = \"$string\", file = \"media/maps/$string/spawnpoints.lua\" },"
             sed -i "/function SpawnRegions()/,/return {/ {    /return {/ a\
