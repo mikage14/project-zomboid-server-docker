@@ -4,11 +4,14 @@ set -o pipefail
 
 project_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 
-docker compose \
-    --project-directory "${project_dir}" \
-    -f "${project_dir}/docker-compose.yml" \
-    logs -f --no-color --no-log-prefix "$@" pzserver 2>&1 |
-awk '
+compose=(
+    docker compose
+    --project-directory "${project_dir}"
+    -f "${project_dir}/docker-compose.yml"
+)
+
+filter_logs() {
+    awk '
 function is_log_header(line) {
     return line ~ /^(\[[^]]+\] )?(LOG  :|WARN :|ERROR:|DEBUG:|TRACE:)/
 }
@@ -79,3 +82,12 @@ function is_known_single_line_noise(line) {
     fflush()
 }
 '
+}
+
+# Follow mode does not reliably replay all retained history in this environment.
+# Read existing logs to EOF, then follow only lines emitted after attaching.
+"${compose[@]}" logs --no-color --no-log-prefix "$@" pzserver 2>&1 |
+    filter_logs
+
+"${compose[@]}" logs -f --no-color --no-log-prefix "$@" --tail=0 pzserver 2>&1 |
+    filter_logs
